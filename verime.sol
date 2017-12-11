@@ -2,40 +2,53 @@ pragma solidity ^0.4.11;
 import './iERC20.sol';
 import './SafeMath.sol';
 
-contract VERIME is iERC20{
-    uint public _totalSupply = 100000000000000000;
-    
+contract VERIME is iERC20 {
+    uint public _totalSupply = 1000000000000000000000000000;
+
     string public constant symbol = "VRM";
     string public constant name = "Verime Mobile";
-    uint8 public constant decimals = 8;
-    
+    uint8 public constant decimals = 18;
+
+    address owner;
+    bool freeTransfer = false;
     mapping (address => uint256) balances;
     mapping (address => mapping (address => uint256)) allowed;
-    
-    function VERIME(){
-        balances[msg.sender] = _totalSupply;
+
+    function VERIME(address _multisig) {
+        balances[_multisig] = _totalSupply;
+        owner = _multisig;
     }
+
+    modifier ownerOrEnabledTransfer() {
+        require(freeTransfer || msg.sender == owner);
+        _;
+    }
+
+    function enableTransfer() ownerOrEnabledTransfer() {
+        freeTransfer = true;
+    }
+
     function totalSupply() constant returns (uint256 totalSupply){
-         return _totalSupply;
+        return _totalSupply;
     }
     function balanceOf(address _owner) constant returns (uint256 balance) {
         return balances[_owner];
     }
-    function transfer(address _to, uint256 _value) public returns (bool) {
+    function transfer(address _to, uint256 _value) ownerOrEnabledTransfer public returns (bool) {
         require(
-            balances[msg.sender]>= _value
-            && _value > 0
+        balances[msg.sender]>= _value
+        && _value > 0
         );
         balances[msg.sender] -= _value;
         balances[_to] += _value;
         Transfer(msg.sender, _to, _value);
         return true;
     }
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
+    function transferFrom(address _from, address _to, uint256 _value) ownerOrEnabledTransfer public returns (bool success) {
         require(
-            allowed[_from][msg.sender]  >= _value
-            && balances[_from] >= _value
-            && _value > 0
+        allowed[_from][msg.sender]  >= _value
+        && balances[_from] >= _value
+        && _value > 0
         );
         balances[_from] -= _value;
         balances[_to] += _value;
