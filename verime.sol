@@ -31,10 +31,17 @@ contract VERIME is iERC20 {
     function totalSupply() constant returns (uint256 totalSupply){
         return _totalSupply;
     }
+
     function balanceOf(address _owner) constant returns (uint256 balance) {
         return balances[_owner];
     }
-    function transfer(address _to, uint256 _value) ownerOrEnabledTransfer public returns (bool) {
+
+    modifier onlyPayloadSize(uint size) {
+        assert(msg.data.length == size + 4);
+        _;
+    }
+
+    function transfer(address _to, uint256 _value) ownerOrEnabledTransfer onlyPayloadSize(2 * 32) public returns (bool) {
         require(
         balances[msg.sender]>= _value
         && _value > 0
