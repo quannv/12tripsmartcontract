@@ -1,6 +1,5 @@
 pragma solidity ^0.4.11;
 import './iERC20.sol';
-import './SafeMath.sol';
 
 contract VERIME is iERC20 {
     uint public _totalSupply = 1000000000000000000000000000;
@@ -9,7 +8,8 @@ contract VERIME is iERC20 {
     string public constant name = "Verime Mobile";
     uint8 public constant decimals = 18;
 
-    address owner;
+    address public owner;
+    address public whitelistedContract;
     bool freeTransfer = false;
     mapping (address => uint256) balances;
     mapping (address => mapping (address => uint256)) allowed;
@@ -19,8 +19,13 @@ contract VERIME is iERC20 {
         owner = _multisig;
     }
 
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+
     modifier ownerOrEnabledTransfer() {
-        require(freeTransfer || msg.sender == owner);
+        require(freeTransfer || msg.sender == owner || msg.sender == whitelistedContract);
         _;
     }
 
@@ -75,6 +80,14 @@ contract VERIME is iERC20 {
     }
     function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
         return allowed[_owner][_spender];
+    }
+    function changeWhitelistedContract(address newAddress) public onlyOwner returns (bool) {
+        require(newAddress != address(0));
+        whitelistedContract = newAddress;
+    }
+    function transferOwnership(address newOwner) public onlyOwner returns (bool) {
+      require(newOwner != address(0));
+      owner = newOwner;
     }
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
